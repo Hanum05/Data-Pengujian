@@ -1,1 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Pengujian</title>
+  
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  
+  <style>
+    /* Global Reset & Styling */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
+    body {
+      background-color: #f4f6f9;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Main Container */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 2.5rem;
+      letter-spacing: -0.025em;
+    }
+
+    /* Card Menu Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      width: 100%;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 30px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border-color: #3b82f6;
+    }
+
+    .card svg {
+      width: 40px;
+      height: 40px;
+      stroke: #2563eb;
+    }
+
+    .card span {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* Modal / Pop-up Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 1000;
+      padding: 15px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Modal Container */
+    .modal-container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 1000px;
+      height: 90vh;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-container {
+      transform: scale(1);
+    }
+
+    /* Header Toolbar */
+    .modal-header {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .modal-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s ease;
+    }
+
+    .btn:hover {
+      background: #334155;
+    }
+
+    .btn-download {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+
+    .btn-download:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-close {
+      background: #ef4444;
+      border-color: #ef4444;
+    }
+
+    .btn-close:hover {
+      background: #dc2626;
+    }
+
+    .page-info {
+      font-size: 0.875rem;
+      color: #cbd5e1;
+      margin: 0 4px;
+    }
+
+    /* PDF Viewer Area */
+    .pdf-viewer-body {
+      flex: 1;
+      background: #525659;
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+      position: relative;
+    }
+
+    #pdf-canvas {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      background: #ffffff;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .modal-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .toolbar-controls {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .modal-container {
+        height: 95vh;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main View -->
+  <div class="container">
+    <h1>Data Pengujian</h1>
+    
+    <div class="menu-grid">
+      <!-- Menu 1 -->
+      <div class="card" onclick="openPDF('Data AAS.pdf')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H8.25m0 12.75h7.5m-7.5 3h7.5M6 20.25h12A2.25 2.25 0 0 0 20.25 18V8.25A2.25 2.25 0 0 0 18 6H10.125c-.621 0-1.215.247-1.65.688l-4.5 4.5c-.44.435-.687 1.03-.687 1.65v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        <span>Data AAS</span>
+      </div>
+
+      <!-- Menu 2 -->
+      <div class="card" onclick="openPDF('Data HPLC.pdf')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H8.25m0 12.75h7.5m-7.5 3h7.5M6 20.25h12A2.25 2.25 0 0 0 20.25 18V8.25A2.25 2.25 0 0 0 18 6H10.125c-.621 0-1.215.247-1.65.688l-4.5 4.5c-.44.435-.687 1.03-.687 1.65v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        <span>Data HPLC</span>
+      </div>
+
+      <!-- Menu 3 -->
+      <div class="card" onclick="openPDF('Data LC-HRMS.pdf')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H8.25m0 12.75h7.5m-7.5 3h7.5M6 20.25h12A2.25 2.25 0 0 0 20.25 18V8.25A2.25 2.25 0 0 0 18 6H10.125c-.621 0-1.215.247-1.65.688l-4.5 4.5c-.44.435-.687 1.03-.687 1.65v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        <span>Data LC-HRMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Pop-up Modal -->
+  <div id="pdf-modal" class="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal-container" onclick="event.stopPropagation()">
+      
+      <!-- Modal Header / Toolbar -->
+      <div class="modal-header">
+        <div id="modal-title" class="modal-title">Nama Dokumen</div>
+        
+        <div class="toolbar-controls">
+          <!-- Page Navigation -->
+          <button class="btn" onclick="prevPage()">&#9664; Prev</button>
+          <span class="page-info"><span id="page-num">1</span> / <span id="page-count">1</span></span>
+          <button class="btn" onclick="nextPage()">Next &#9654;</button>
+
+          <!-- Zoom Controls -->
+          <button class="btn" onclick="zoomOut()">&#8722; Zoom</button>
+          <button class="btn" onclick="zoomIn()">&#43; Zoom</button>
+
+          <!-- Download Button -->
+          <a id="btn-download" class="btn btn-download" download>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Download
+          </a>
+
+          <!-- Close Button -->
+          <button class="btn btn-close" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Viewer Body -->
+      <div class="pdf-viewer-body">
+        <canvas id="pdf-canvas"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Configure PDF.js Worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let pdfDoc = null;
+    let pageNum = 1;
+    let pageRendering = false;
+    let pageNumPending = null;
+    let scale = 1.2;
+    let currentFile = '';
+
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    const modal = document.getElementById('pdf-modal');
+
+    // Open Modal and Load PDF
+    function openPDF(filename) {
+      currentFile = filename;
+      document.getElementById('modal-title').textContent = filename;
+      document.getElementById('btn-download').setAttribute('href', filename);
+      document.getElementById('btn-download').setAttribute('download', filename);
+
+      modal.classList.add('active');
+      pageNum = 1;
+      scale = 1.2;
+
+      pdfjsLib.getDocument(filename).promise.then(function(pdfDoc_) {
+        pdfDoc = pdfDoc_;
+        document.getElementById('page-count').textContent = pdfDoc.numPages;
+        renderPage(pageNum);
+      }).catch(function(error) {
+        alert('Gagal memuat PDF: ' + filename + '\nPastikan file berada di folder yang sama dengan index.html.');
+        console.error(error);
+      });
+    }
+
+    // Render Specified Page
+    function renderPage(num) {
+      pageRendering = true;
+      pdfDoc.getPage(num).then(function(page) {
+        const viewport = page.getViewport({ scale: scale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        const renderTask = page.render(renderContext);
+
+        renderTask.promise.then(function() {
+          pageRendering = false;
+          if (pageNumPending !== null) {
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        });
+      });
+
+      document.getElementById('page-num').textContent = num;
+    }
+
+    function queueRenderPage(num) {
+      if (pageRendering) {
+        pageNumPending = num;
+      } else {
+        renderPage(num);
+      }
+    }
+
+    // Navigation Actions
+    function prevPage() {
+      if (pageNum <= 1) return;
+      pageNum--;
+      queueRenderPage(pageNum);
+    }
+
+    function nextPage() {
+      if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+      pageNum++;
+      queueRenderPage(pageNum);
+    }
+
+    // Zoom Actions
+    function zoomIn() {
+      if (!pdfDoc) return;
+      scale += 0.2;
+      queueRenderPage(pageNum);
+    }
+
+    function zoomOut() {
+      if (!pdfDoc || scale <= 0.6) return;
+      scale -= 0.2;
+      queueRenderPage(pageNum);
+    }
+
+    // Close Modal
+    function closeModal() {
+      modal.classList.remove('active');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pdfDoc = null;
+    }
+
+    function handleOverlayClick(event) {
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', function(event) {
+      if (!modal.classList.contains('active')) return;
+
+      if (event.key === 'Escape') closeModal();
+      if (event.key === 'ArrowRight') nextPage();
+      if (event.key === 'ArrowLeft') prevPage();
+    });
+  </script>
+</body>
+</html>
